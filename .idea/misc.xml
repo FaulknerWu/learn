@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="sklearn" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="sklearn" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="eeg-sklearn" project-jdk-type="Python SDK" />
 </project>
