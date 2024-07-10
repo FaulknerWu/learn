@@ -168,6 +168,10 @@ pd.set_option('max_colwidth', None)
 # 设置绘图风格
 set_plot_style()
 
+# 设置可视化浏览器后端，可选项有'qt', 'matplotlib'。
+# 更多详细内容参见：https://mne.tools/stable/generated/mne.viz.set_browser_backend.html
+mne.viz.set_browser_backend('matplotlib')
+
 # 定义电极映射
 # Source - https://www.egi.com/images/HydroCelGSN_10-10.pdf
 electrode_map = {
@@ -192,3 +196,5 @@ print(extract_signal_features(raw_erp, 'one_pat').head())
 
 # 提取ERP数据的非线性特征并显示
 print(nli_features(raw_erp, 'one_pat').head())
+
+raw_erp.copy().pick(['stim']).plot(start=0, duration=6)
