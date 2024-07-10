@@ -4,6 +4,7 @@ import mne
 import seaborn as sns
 import numpy as np
 import pandas as pd
+import antropy as ant
 
 
 # 设置绘图风格
@@ -133,11 +134,30 @@ def extract_signal_features(raw_data, prefix):
         feature_dict[channel_names[i]] = features
 
     feature_df = pd.DataFrame(feature_dict).T
-    feature_df.columns = [
-        f'lf_alpha_{prefix}', f'lf_beta_{prefix}', f'lf_delta_{prefix}', f'lf_theta_{prefix}',
-        f'lf_mean_{prefix}', f'lf_max_{prefix}', f'lf_min_{prefix}', f'lf_median_{prefix}'
-    ]
+    feature_df.columns = ['lf_alpha_' + prefix, 'lf_beta_' + prefix, 'lf_delta_' + prefix, 'lf_theta_' + prefix,
+                          'lf_mean_' + prefix, 'lf_max_' + prefix, 'lf_min_' + prefix, 'lf_median_' + prefix]
     return feature_df
+
+
+# 提取非线性特征（奇异值分解熵、谱熵、排列熵）
+def nli_features(df, prefix):
+    ch_names = df.ch_names
+    val_dict = dict()
+    overall = bandpass_filter_eeg_data(df.copy(), 1, 40)
+    d = overall.get_data()
+
+    for i in range(d.shape[0]):
+        signal = d[i, :]
+        svd_entropy = ant.svd_entropy(signal, normalize=True)  # 奇异值分解熵（SVD entropy）
+        spectral_entropy = ant.spectral_entropy(signal, sf=250, method='welch', normalize=True)  # 谱熵（Spectral entropy）
+        perm_entropy = ant.perm_entropy(d[i, :], normalize=True)  # 排列熵（Permutation entropy）
+
+        objects = [svd_entropy, spectral_entropy, perm_entropy]
+        val_dict[ch_names[i]] = objects
+
+    feature_nli = pd.DataFrame(val_dict).T
+    feature_nli.columns = ['nl_svden_' + prefix, 'nl_spec_en' + prefix, 'nl_permen' + prefix]
+    return feature_nli
 
 
 # 设置Pandas显示选项
@@ -149,6 +169,7 @@ pd.set_option('max_colwidth', None)
 set_plot_style()
 
 # 定义电极映射
+# Source - https://www.egi.com/images/HydroCelGSN_10-10.pdf
 electrode_map = {
     'C3': 'E36', 'C4': 'E104', 'F3': 'E24', 'F4': 'E124', 'F7': 'E33', 'F8': 'E122',
     'FP1': 'E22', 'FP2': 'E9', 'O1': 'E70', 'O2': 'E83', 'P3': 'E52', 'P4': 'E92',
@@ -167,5 +188,7 @@ filtered_resting_state = bandpass_filter_eeg_data(raw_resting_state, 1, 40)
 filtered_resting_state.plot_psd()
 
 # 提取ERP数据的信号特征并显示
-erp_features = extract_signal_features(raw_erp, 'one_pat')
-print(erp_features.head())
+print(extract_signal_features(raw_erp, 'one_pat').head())
+
+# 提取ERP数据的非线性特征并显示
+print(nli_features(raw_erp, 'one_pat').head())
